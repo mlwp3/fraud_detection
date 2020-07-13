@@ -1,1 +1,11 @@
-Daniel's Personal Sandbox
+Initial GLM gives me pretty mediocre results:
+          Reference
+Prediction    0    1
+         0 2605  140
+         1  114   31
+
+AUC: 0.5814
+
+That's significantly worse AUC than if you just guess that it isn't fraud for every case, but it means that 21% of the "positives" are fraud, compared to only 5% of the "negatives".
+So if you were trying to pick out claims to investigate for fraud, this GLM would help considerably to improve your search odds. Maybe AUC isn't the best metric for fraud detection?
+
