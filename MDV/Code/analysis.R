@@ -2,7 +2,6 @@ library(tidyverse)
 library(caret)
 library(dataPreparation)
 library(ROCR)
-
 library(xgboost)
 library(randomForest)
 
@@ -32,7 +31,6 @@ train_data <- fastScale(train_data, scales = mean_sd_scale, verbose = FALSE)
 
 test_data <- fastScale(test_data, scales = mean_sd_scale, verbose = FALSE)
 
-
 # xgboost
 
 table(train_data$y)
@@ -43,11 +41,9 @@ table(test_data$y)
 train_weights <- ifelse(train_data$y == 0, sum(train_data$y == 0)/nrow(train_data), 
                         sum(train_data$y == 1)/nrow(train_data))
 
-
 train_data$y <- as.numeric(train_data$y)
 
 test_data$y <- as.numeric(test_data$y)
-
 
 train_data_enc_rules <- dummyVars(y ~ ., data = train_data)
 
@@ -110,5 +106,19 @@ xgb_roc_data <- prediction(xgb_pred, test_data$y - 1)
 
 # randomforest
 
+rf_cv <- rfcv(select(train_data, -y), train_data$y, 
+              cv.fold=10, 
+              classwt = c("0" = sum(train_data$y == 1)/length(train_data$y), "1" = sum(train_data$y == 0)/length(train_data$y)))
 
+rf_model <- randomForest(y ~ ., 
+                   data = train_data, 
+                   classwt = c("0" = sum(train_data$y == 1)/length(train_data$y), "1" = sum(train_data$y == 0)/length(train_data$y)),
+                   mtry = rf_cv$n.var[which.min(rf_cv$error.cv)])
 
+rf_pred = predict(rf_model, newdata = test_data)
+
+(rf_acc <- confusionMatrix(as.factor(rf_pred), as.factor(test_data$y))$overall["Accuracy"])
+
+rf_roc_data <- prediction(as.numeric(rf_pred), test_data$y)
+
+(rf_auc <- performance(rf_roc_data, measure = "auc")@y.values[[1]])
